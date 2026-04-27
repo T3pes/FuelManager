@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { Navbar } from '@/components/Navbar';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -9,7 +10,7 @@ export default function Home() {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
+      const { data } = await supabase.auth.getUser();
       setUser(data?.user || null);
       setLoading(false);
     };
@@ -30,11 +31,14 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-white">
-      <div className="bg-zinc-100 p-8 rounded-xl shadow text-center">
-        <h1 className="text-2xl font-bold mb-2 text-blue-700">Benvenuto in FuelManager</h1>
-        <p className="text-zinc-700 mb-4">Utente: <span className="font-mono">{user.email}</span></p>
-        <a href="/tankers" className="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-semibold">Vai a Gestione Cisterne</a>
+    <main className="min-h-screen bg-white">
+      <Navbar user={user} />
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="bg-zinc-100 p-8 rounded-xl shadow text-center">
+          <h1 className="text-2xl font-bold mb-2 text-blue-700">Benvenuto in FuelManager</h1>
+          <p className="text-zinc-700 mb-4">Utente: <span className="font-mono">{user.email}</span></p>
+          <a href="/tankers" className="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 font-semibold">Vai a Gestione Cisterne</a>
+        </div>
       </div>
     </main>
   );

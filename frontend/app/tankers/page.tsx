@@ -1,5 +1,6 @@
 "use client";
 
+import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { useEffect, useState } from 'react';
 
@@ -42,6 +43,9 @@ export default function TankersPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-10">
+      <div className="mb-4 flex items-center gap-4">
+        <Link href="/" className="text-blue-700 hover:underline">&larr; Torna alla Dashboard</Link>
+      </div>
       <h1 className="text-2xl font-bold mb-6 text-white">Gestione Cisterne</h1>
       <form onSubmit={handleAdd} className="flex gap-2 mb-6">
         <input
