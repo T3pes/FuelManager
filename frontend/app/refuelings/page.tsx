@@ -1,0 +1,125 @@
+"use client";
+
+import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
+import { useEffect, useState } from 'react';
+
+export default function RefuelingsPage() {
+  const [refuelings, setRefuelings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [operatorId, setOperatorId] = useState('');
+  const [tankerId, setTankerId] = useState('');
+  const [aircraftId, setAircraftId] = useState('');
+  const [quantity, setQuantity] = useState('');
+  const [date, setDate] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [operators, setOperators] = useState<any[]>([]);
+  const [tankers, setTankers] = useState<any[]>([]);
+  const [aircrafts, setAircrafts] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchAll();
+  }, []);
+
+  async function fetchAll() {
+    setLoading(true);
+    const [r, o, t, a] = await Promise.all([
+      supabase.from('refuelings').select('*').order('date', { ascending: false }),
+      supabase.from('operators').select('id, name'),
+      supabase.from('tankers').select('id, name'),
+      supabase.from('aircrafts').select('id, code')
+    ]);
+    setRefuelings(r.data || []);
+    setOperators(o.data || []);
+    setTankers(t.data || []);
+    setAircrafts(a.data || []);
+    setLoading(false);
+  }
+
+  async function handleAdd(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!operatorId || !tankerId || !aircraftId || !quantity || !date) return setError('Compila tutti i campi');
+    const { error } = await supabase.from('refuelings').insert([{ operator_id: operatorId, tanker_id: tankerId, aircraft_id: aircraftId, quantity: Number(quantity), date }]);
+    if (error) setError(error.message);
+    setOperatorId(''); setTankerId(''); setAircraftId(''); setQuantity(''); setDate('');
+    fetchAll();
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm('Eliminare questo rifornimento?')) return;
+    const { error } = await supabase.from('refuelings').delete().eq('id', id);
+    if (error) setError(error.message);
+    fetchAll();
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto py-10">
+      <div className="mb-4 flex items-center gap-4">
+        <Link href="/" className="text-blue-700 hover:underline">&larr; Torna alla Dashboard</Link>
+      </div>
+      <h1 className="text-2xl font-bold mb-6 text-white">Gestione Rifornimenti</h1>
+      <form onSubmit={handleAdd} className="flex flex-wrap gap-2 mb-6">
+        <select value={operatorId} onChange={e => setOperatorId(e.target.value)} className="p-2 rounded bg-zinc-800 text-white border border-zinc-700">
+          <option value="">Operatore</option>
+          {operators.map((o: any) => <option key={o.id} value={o.id}>{o.name}</option>)}
+        </select>
+        <select value={tankerId} onChange={e => setTankerId(e.target.value)} className="p-2 rounded bg-zinc-800 text-white border border-zinc-700">
+          <option value="">Cisterna</option>
+          {tankers.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+        </select>
+        <select value={aircraftId} onChange={e => setAircraftId(e.target.value)} className="p-2 rounded bg-zinc-800 text-white border border-zinc-700">
+          <option value="">Velivolo</option>
+          {aircrafts.map((a: any) => <option key={a.id} value={a.id}>{a.code}</option>)}
+        </select>
+        <input
+          type="number"
+          placeholder="Quantità (litri)"
+          value={quantity}
+          onChange={e => setQuantity(e.target.value)}
+          className="w-32 p-2 rounded bg-zinc-800 text-white border border-zinc-700"
+        />
+        <input
+          type="datetime-local"
+          placeholder="Data"
+          value={date}
+          onChange={e => setDate(e.target.value)}
+          className="w-56 p-2 rounded bg-zinc-800 text-white border border-zinc-700"
+        />
+        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Aggiungi</button>
+      </form>
+      {error && <div className="text-red-500 mb-4">{error}</div>}
+      {loading ? (
+        <div className="text-zinc-400">Caricamento...</div>
+      ) : (
+        <table className="w-full text-white border-separate border-spacing-y-2 text-sm">
+          <thead>
+            <tr className="bg-zinc-800">
+              <th className="p-2 rounded-l">Operatore</th>
+              <th className="p-2">Cisterna</th>
+              <th className="p-2">Velivolo</th>
+              <th className="p-2">Quantità</th>
+              <th className="p-2">Data</th>
+              <th className="p-2 rounded-r">Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            {refuelings.map(r => (
+              <tr key={r.id} className="bg-zinc-900">
+                <td className="p-2">{operators.find(o => o.id === r.operator_id)?.name || '-'}</td>
+                <td className="p-2">{tankers.find(t => t.id === r.tanker_id)?.name || '-'}</td>
+                <td className="p-2">{aircrafts.find(a => a.id === r.aircraft_id)?.code || '-'}</td>
+                <td className="p-2">{r.quantity}</td>
+                <td className="p-2">{r.date ? new Date(r.date).toLocaleString() : '-'}</td>
+                <td className="p-2">
+                  <button onClick={() => handleDelete(r.id)} className="text-red-400 hover:underline">Elimina</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
