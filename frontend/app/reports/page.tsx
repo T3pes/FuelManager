@@ -1,23 +1,11 @@
 "use client";
 
-import Link from 'next/link';
-import { supabase } from '@/lib/supabaseClient';
 import { useEffect, useState } from 'react';
-
-function exportToCSV(rows: any[], filename: string) {
-  if (!rows.length) return;
-  const header = Object.keys(rows[0]);
-  const csv = [header.join(','), ...rows.map(row => header.map(h => '"' + (row[h] ?? '') + '"').join(','))].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  window.URL.revokeObjectURL(url);
-}
+import { supabase } from '@/lib/supabaseClient';
+import { Navbar } from '@/components/Navbar';
 
 export default function ReportsPage() {
+  const [user, setUser] = useState<any>(null);
   const [refuelings, setRefuelings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +13,14 @@ export default function ReportsPage() {
   const [sending, setSending] = useState(false);
   const [sendMsg, setSendMsg] = useState<string | null>(null);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data?.user || null);
+    };
+    getUser();
+    fetchData();
+  }, []);
 
   async function fetchData() {
     setLoading(true);
@@ -35,7 +30,6 @@ export default function ReportsPage() {
     setLoading(false);
   }
 
-  // Esempio di aggregazione: totale litri
   const totalLiters = refuelings.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
 
   async function handleSendEmail(e?: React.FormEvent) {
@@ -59,7 +53,6 @@ export default function ReportsPage() {
     setSending(false);
   }
 
-  // Invio automatico ogni giorno alle 19:00 (solo lato client, finché la pagina è aperta)
   useEffect(() => {
     if (!email) return;
     const now = new Date();
@@ -72,69 +65,86 @@ export default function ReportsPage() {
     return () => clearTimeout(timeout);
   }, [email, refuelings.length]);
 
+  if (!user) return null;
+
   return (
-    <div className="max-w-3xl mx-auto py-10">
-      <div className="mb-4 flex items-center gap-4">
-        <Link href="/" className="text-blue-700 hover:underline">&larr; Torna alla Dashboard</Link>
-      </div>
-      <h1 className="text-2xl font-bold mb-6 text-white">Reportistica</h1>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      {loading ? (
-        <div className="text-zinc-400">Caricamento...</div>
-      ) : (
-        <>
-          <div className="bg-zinc-900 p-4 rounded mb-6 text-white">
-            <div className="mb-2">Totale rifornimenti: <b>{refuelings.length}</b></div>
-            <div className="mb-2">Totale litri erogati: <b>{totalLiters}</b></div>
-          </div>
-          <form onSubmit={handleSendEmail} className="flex gap-2 mb-4">
-            <input
-              type="email"
-              placeholder="Destinatario email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="p-2 rounded bg-zinc-100 text-black border border-zinc-300"
-              required
-            />
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" disabled={sending}>
-              {sending ? 'Invio...' : 'Invia report via email'}
+    <main className="min-h-screen bg-white">
+      <Navbar user={user} />
+      <div className="max-w-3xl mx-auto py-10">
+        <h1 className="text-2xl font-bold mb-6 text-blue-700">Reportistica</h1>
+        {error && <div className="text-red-500 mb-4">{error}</div>}
+        {loading ? (
+          <div className="text-zinc-500">Caricamento...</div>
+        ) : (
+          <>
+            <div className="bg-zinc-100 p-4 rounded mb-6 text-blue-900">
+              <div className="mb-2">Totale rifornimenti: <b>{refuelings.length}</b></div>
+              <div className="mb-2">Totale litri erogati: <b>{totalLiters}</b></div>
+            </div>
+            <form onSubmit={handleSendEmail} className="flex gap-2 mb-4">
+              <input
+                type="email"
+                placeholder="Destinatario email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="p-2 rounded bg-zinc-100 text-black border border-zinc-300"
+                required
+              />
+              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" disabled={sending}>
+                {sending ? 'Invio...' : 'Invia report via email'}
+              </button>
+            </form>
+            {sendMsg && <div className={sendMsg.startsWith('Errore') ? 'text-red-500' : 'text-green-600'}>{sendMsg}</div>}
+            <button
+              onClick={() => exportToCSV(refuelings, 'rifornimenti.csv')}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-6"
+            >
+              Esporta CSV
             </button>
-          </form>
-          {sendMsg && <div className={sendMsg.startsWith('Errore') ? 'text-red-500' : 'text-green-500'}>{sendMsg}</div>}
-          <button
-            onClick={() => exportToCSV(refuelings, 'rifornimenti.csv')}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-6"
-          >
-            Esporta CSV
-          </button>
-          <table className="w-full text-white border-separate border-spacing-y-2 text-sm">
-            <thead>
-              <tr className="bg-zinc-800">
-                <th className="p-2 rounded-l">ID</th>
-                <th className="p-2">Operatore</th>
-                <th className="p-2">Cisterna</th>
-                <th className="p-2">Velivolo</th>
-                <th className="p-2">Quantità</th>
-                <th className="p-2">Data</th>
-                <th className="p-2 rounded-r">Creato il</th>
-              </tr>
-            </thead>
-            <tbody>
-              {refuelings.map(r => (
-                <tr key={r.id} className="bg-zinc-900">
-                  <td className="p-2">{r.id}</td>
-                  <td className="p-2">{r.operator_id}</td>
-                  <td className="p-2">{r.tanker_id}</td>
-                  <td className="p-2">{r.aircraft_id}</td>
-                  <td className="p-2">{r.quantity}</td>
-                  <td className="p-2">{r.date ? new Date(r.date).toLocaleString() : '-'}</td>
-                  <td className="p-2">{r.created_at ? new Date(r.created_at).toLocaleString() : '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
-    </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-blue-900 border-separate border-spacing-y-2 text-sm">
+                <thead>
+                  <tr className="bg-zinc-200">
+                    <th className="p-2 rounded-l">ID</th>
+                    <th className="p-2">Operatore</th>
+                    <th className="p-2">Cisterna</th>
+                    <th className="p-2">Velivolo</th>
+                    <th className="p-2">Quantità</th>
+                    <th className="p-2">Data</th>
+                    <th className="p-2 rounded-r">Creato il</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {refuelings.map(r => (
+                    <tr key={r.id} className="bg-white border-b border-zinc-200">
+                      <td className="p-2">{r.id}</td>
+                      <td className="p-2">{r.operator_id}</td>
+                      <td className="p-2">{r.tanker_id}</td>
+                      <td className="p-2">{r.aircraft_id}</td>
+                      <td className="p-2">{r.quantity}</td>
+                      <td className="p-2">{r.date ? new Date(r.date).toLocaleString() : '-'}</td>
+                      <td className="p-2">{r.created_at ? new Date(r.created_at).toLocaleString() : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
+    </main>
   );
+}
+
+function exportToCSV(rows: any[], filename: string) {
+  if (!rows.length) return;
+  const header = Object.keys(rows[0]);
+  const csv = [header.join(','), ...rows.map(row => header.map(h => '"' + (row[h] ?? '') + '"').join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  window.URL.revokeObjectURL(url);
 }

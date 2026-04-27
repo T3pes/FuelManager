@@ -1,17 +1,26 @@
 "use client";
 
-import Link from 'next/link';
-import { supabase } from '@/lib/supabaseClient';
 import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { Navbar } from '@/components/Navbar';
+import Link from 'next/link';
 
 export default function AircraftsPage() {
+  const [user, setUser] = useState<any>(null);
   const [aircrafts, setAircrafts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [code, setCode] = useState('');
   const [type, setType] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => { fetchAircrafts(); }, []);
+  useEffect(() => {
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data?.user || null);
+    };
+    getUser();
+    fetchAircrafts();
+  }, []);
 
   async function fetchAircrafts() {
     setLoading(true);
@@ -39,55 +48,61 @@ export default function AircraftsPage() {
     fetchAircrafts();
   }
 
+  if (!user) return null;
+
   return (
-    <div className="max-w-2xl mx-auto py-10">
-      <div className="mb-4 flex items-center gap-4">
-        <Link href="/" className="text-blue-700 hover:underline">&larr; Torna alla Dashboard</Link>
+    <main className="min-h-screen bg-white">
+      <Navbar user={user} />
+      <div className="max-w-2xl mx-auto py-10">
+        <div className="mb-4 flex items-center gap-4">
+          <Link href="/" className="text-blue-700 hover:underline">&larr; Torna alla Dashboard</Link>
+        </div>
+        <h1 className="text-2xl font-bold mb-6 text-blue-700">Gestione Velivoli</h1>
+        <form onSubmit={handleAdd} className="flex gap-2 mb-6">
+          <input
+            type="text"
+            placeholder="Codice velivolo"
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            className="flex-1 p-2 rounded bg-zinc-100 text-black border border-zinc-300"
+          />
+          <input
+            type="text"
+            placeholder="Tipo"
+            value={type}
+            onChange={e => setType(e.target.value)}
+            className="w-40 p-2 rounded bg-zinc-100 text-black border border-zinc-300"
+          />
+          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Aggiungi</button>
+        </form>
+        {error && <div className="text-red-500 mb-4">{error}</div>}
+        {loading ? (
+          <div className="text-zinc-500">Caricamento...</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-blue-900 border-separate border-spacing-y-2 text-sm">
+              <thead>
+                <tr className="bg-zinc-200">
+                  <th className="p-2 rounded-l">Codice</th>
+                  <th className="p-2">Tipo</th>
+                  <th className="p-2 rounded-r">Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {aircrafts.map(a => (
+                  <tr key={a.id} className="bg-white border-b border-zinc-200">
+                    <td className="p-2">{a.code}</td>
+                    <td className="p-2">{a.type}</td>
+                    <td className="p-2">
+                      <button onClick={() => handleDelete(a.id)} className="text-red-500 hover:underline">Elimina</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
-      <h1 className="text-2xl font-bold mb-6 text-white">Gestione Velivoli</h1>
-      <form onSubmit={handleAdd} className="flex gap-2 mb-6">
-        <input
-          type="text"
-          placeholder="Codice velivolo"
-          value={code}
-          onChange={e => setCode(e.target.value)}
-          className="flex-1 p-2 rounded bg-zinc-800 text-white border border-zinc-700"
-        />
-        <input
-          type="text"
-          placeholder="Tipo"
-          value={type}
-          onChange={e => setType(e.target.value)}
-          className="w-40 p-2 rounded bg-zinc-800 text-white border border-zinc-700"
-        />
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Aggiungi</button>
-      </form>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      {loading ? (
-        <div className="text-zinc-400">Caricamento...</div>
-      ) : (
-        <table className="w-full text-white border-separate border-spacing-y-2">
-          <thead>
-            <tr className="bg-zinc-800">
-              <th className="p-2 rounded-l">Codice</th>
-              <th className="p-2">Tipo</th>
-              <th className="p-2 rounded-r">Azioni</th>
-            </tr>
-          </thead>
-          <tbody>
-            {aircrafts.map(a => (
-              <tr key={a.id} className="bg-zinc-900">
-                <td className="p-2">{a.code}</td>
-                <td className="p-2">{a.type}</td>
-                <td className="p-2">
-                  <button onClick={() => handleDelete(a.id)} className="text-red-400 hover:underline">Elimina</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </div>
+    </main>
   );
 }
-
