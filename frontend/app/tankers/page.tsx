@@ -19,6 +19,8 @@ export default function TankersPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editCapacity, setEditCapacity] = useState('');
+  // Stato per gestire input litri da aggiungere per ogni cisterna
+  const [addLiters, setAddLiters] = useState<{ [id: string]: string }>({});
 
 
   useEffect(() => {
@@ -84,8 +86,6 @@ export default function TankersPage() {
     fetchAll();
   }
 
-  if (!user) return null;
-
   // Calcolo capacità residua per ogni cisterna
   function getResidue(tankerId: string, capacity: number) {
     const used = refuelings
@@ -93,6 +93,18 @@ export default function TankersPage() {
       .reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
     return capacity - used;
   }
+
+  // Funzione per aggiungere litri alla cisterna e aggiornare la capacità
+  async function handleAddLiters(tanker: Tanker, litersToAdd: number) {
+    if (isNaN(litersToAdd) || litersToAdd <= 0) return;
+    const residue = getResidue(tanker.id, tanker.capacity);
+    const newCapacity = residue + litersToAdd;
+    const { error } = await supabase.from('tankers').update({ capacity: newCapacity }).eq('id', tanker.id);
+    if (error) setError(error.message);
+    fetchAll();
+  }
+
+  if (!user) return null;
 
   return (
     <main className="min-h-screen bg-white">
@@ -158,9 +170,29 @@ export default function TankersPage() {
                         <td className="p-2 text-center">{t.capacity}</td>
                         <td className="p-2 text-center">{getResidue(t.id, t.capacity)}</td>
                         <td className="p-2 text-center">
-                          <div className="flex justify-center gap-2">
-                            <button onClick={() => startEdit(t)} className="text-blue-600 hover:underline">Modifica</button>
-                            <button onClick={() => handleDelete(t.id)} className="text-red-500 hover:underline">Elimina</button>
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="flex justify-center gap-2 mb-1">
+                              <button onClick={() => startEdit(t)} className="text-blue-600 hover:underline">Modifica</button>
+                              <button onClick={() => handleDelete(t.id)} className="text-red-500 hover:underline">Elimina</button>
+                            </div>
+                            <form
+                              onSubmit={e => {
+                                e.preventDefault();
+                                handleAddLiters(t, Number(addLiters[t.id] || 0));
+                                setAddLiters(prev => ({ ...prev, [t.id]: '' }));
+                              }}
+                              className="flex gap-1"
+                            >
+                              <input
+                                type="number"
+                                min="1"
+                                placeholder="Aggiungi litri"
+                                value={addLiters[t.id] || ''}
+                                onChange={e => setAddLiters(prev => ({ ...prev, [t.id]: e.target.value }))}
+                                className="w-24 p-1 rounded border border-zinc-300 text-sm"
+                              />
+                              <button type="submit" className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 text-xs">Aggiungi</button>
+                            </form>
                           </div>
                         </td>
                       </>
