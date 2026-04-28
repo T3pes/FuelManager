@@ -22,6 +22,7 @@ export default function ReportsPage() {
     fetchData();
   }, []);
 
+
   async function fetchData() {
     setLoading(true);
     const { data, error } = await supabase.from('refuelings').select('*');
