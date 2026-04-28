@@ -68,14 +68,16 @@ export default function RefuelingsPage() {
       setError('ID rifornimento non valido');
       return;
     }
+    // DEBUG: mostra id e lista id presenti
+    console.log('Tentativo eliminazione id:', id);
+    console.log('Id presenti:', refuelings.map(r => r.id));
     const { error } = await supabase.from('refuelings').delete().eq('id', id);
     if (error) {
       setError('Errore eliminazione: ' + error.message);
     } else {
-      // controllo se la riga è effettivamente sparita
       const { data } = await supabase.from('refuelings').select('id').eq('id', id);
       if (data && data.length > 0) {
-        setError('Attenzione: il record non è stato eliminato.');
+        setError('Attenzione: il record non è stato eliminato. id=' + id + ' presenti=' + refuelings.map(r => r.id).join(','));
       }
     }
     fetchAll();
