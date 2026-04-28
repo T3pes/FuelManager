@@ -5,9 +5,13 @@ import { supabase } from '@/lib/supabaseClient';
 import { Navbar } from '@/components/Navbar';
 import Link from 'next/link';
 
+type Tanker = { id: string; name: string; capacity: number };
+type Refueling = { id: string; tanker_id: string; quantity: number };
+
 export default function TankersPage() {
   const [user, setUser] = useState<any>(null);
-  const [tankers, setTankers] = useState<any[]>([]);
+  const [tankers, setTankers] = useState<Tanker[]>([]);
+  const [refuelings, setRefuelings] = useState<Refueling[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
   const [capacity, setCapacity] = useState('');
@@ -16,22 +20,30 @@ export default function TankersPage() {
   const [editName, setEditName] = useState('');
   const [editCapacity, setEditCapacity] = useState('');
 
+
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
       setUser(data?.user || null);
     };
     getUser();
-    fetchTankers();
+    fetchAll();
   }, []);
 
-  async function fetchTankers() {
+  async function fetchAll() {
     setLoading(true);
-    const { data, error } = await supabase.from('tankers').select('*').order('created_at', { ascending: false });
-    if (error) setError(error.message);
-    else setTankers(data || []);
+    const [tankersRes, refuelingsRes] = await Promise.all([
+      supabase.from('tankers').select('*').order('created_at', { ascending: false }),
+      supabase.from('refuelings').select('id, tanker_id, quantity')
+    ]);
+    if (tankersRes.error) setError(tankersRes.error.message);
+    else setTankers(tankersRes.data || []);
+    if (refuelingsRes.error) setError(refuelingsRes.error.message);
+    else setRefuelings(refuelingsRes.data || []);
     setLoading(false);
   }
+
+  // fetchTankers non più usata
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -41,14 +53,14 @@ export default function TankersPage() {
     if (error) setError(error.message);
     setName('');
     setCapacity('');
-    fetchTankers();
+    fetchAll();
   }
 
   async function handleDelete(id: string) {
     if (!confirm('Eliminare questa cisterna?')) return;
     const { error } = await supabase.from('tankers').delete().eq('id', id);
     if (error) setError(error.message);
-    fetchTankers();
+    fetchAll();
   }
 
   function startEdit(t: any) {
@@ -69,10 +81,18 @@ export default function TankersPage() {
     const { error } = await supabase.from('tankers').update({ name: editName, capacity: Number(editCapacity) }).eq('id', editId);
     if (error) setError(error.message);
     cancelEdit();
-    fetchTankers();
+    fetchAll();
   }
 
   if (!user) return null;
+
+  // Calcolo capacità residua per ogni cisterna
+  function getResidue(tankerId: string, capacity: number) {
+    const used = refuelings
+      .filter(r => r.tanker_id === tankerId)
+      .reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
+    return capacity - used;
+  }
 
   return (
     <main className="min-h-screen bg-white">
@@ -109,6 +129,7 @@ export default function TankersPage() {
                 <tr className="bg-zinc-200">
                   <th className="p-2 text-center rounded-l min-w-[120px]">Nome</th>
                   <th className="p-2 text-center min-w-[120px]">Capacità</th>
+                  <th className="p-2 text-center min-w-[120px]">Capacità residua</th>
                   <th className="p-2 text-center rounded-r min-w-[120px]">Azioni</th>
                 </tr>
               </thead>
@@ -123,6 +144,7 @@ export default function TankersPage() {
                         <td className="p-2 text-center">
                           <input type="number" value={editCapacity} onChange={e => setEditCapacity(e.target.value)} className="p-1 rounded border border-zinc-300 w-full" />
                         </td>
+                        <td className="p-2 text-center text-zinc-400">-</td>
                         <td className="p-2 text-center">
                           <div className="flex justify-center gap-2">
                             <button onClick={handleEditSave} className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">Salva</button>
@@ -134,6 +156,7 @@ export default function TankersPage() {
                       <>
                         <td className="p-2 text-center">{t.name}</td>
                         <td className="p-2 text-center">{t.capacity}</td>
+                        <td className="p-2 text-center">{getResidue(t.id, t.capacity)}</td>
                         <td className="p-2 text-center">
                           <div className="flex justify-center gap-2">
                             <button onClick={() => startEdit(t)} className="text-blue-600 hover:underline">Modifica</button>
