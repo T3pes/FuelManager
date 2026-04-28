@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Navbar } from '@/components/Navbar';
 
 export default function ReportsPage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [refuelings, setRefuelings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,6 +19,10 @@ export default function ReportsPage() {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
       setUser(data?.user || null);
+      setLoading(false);
+      if (!data?.user) {
+        router.push('/login');
+      }
     };
     getUser();
     fetchData();
@@ -66,6 +72,7 @@ export default function ReportsPage() {
     return () => clearTimeout(timeout);
   }, [email, refuelings.length]);
 
+  if (loading) return <div className="flex min-h-screen items-center justify-center text-zinc-500">Caricamento...</div>;
   if (!user) return null;
 
   return (
