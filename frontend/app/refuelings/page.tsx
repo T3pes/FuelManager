@@ -43,18 +43,23 @@ export default function RefuelingsPage() {
     setLoading(false);
   }
 
+  // Funzione per convertire stringa datetime-local in UTC ISO
+  function localDateTimeToUTC(dateStr: string) {
+    if (!dateStr) return dateStr;
+    const [datePart, timePart] = dateStr.split('T');
+    if (!datePart || !timePart) return dateStr;
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour, minute] = timePart.split(':').map(Number);
+    const localDate = new Date(year, month - 1, day, hour, minute);
+    return localDate.toISOString();
+  }
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!operatorId || !tankerId || !aircraftId || !quantity || !date) return setError('Compila tutti i campi');
-    // Conversione data locale in UTC ISO string
-    let dateUTC = date;
-    try {
-      const local = new Date(date);
-      dateUTC = new Date(local.getTime() - local.getTimezoneOffset() * 60000).toISOString();
-    } catch (err) {
-      // fallback: salvo comunque la stringa
-    }
+    // Conversione robusta data locale in UTC ISO string
+    const dateUTC = localDateTimeToUTC(date);
     const { error } = await supabase.from('refuelings').insert([{ operator_id: operatorId, tanker_id: tankerId, aircraft_id: aircraftId, quantity: Number(quantity), date: dateUTC }]);
     if (error) setError(error.message);
     setOperatorId(''); setTankerId(''); setAircraftId(''); setQuantity(''); setDate('');
