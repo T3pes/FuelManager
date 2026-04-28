@@ -80,21 +80,23 @@ export default function AircraftsPage() {
           <div className="text-zinc-500">Caricamento...</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-blue-900 border-separate border-spacing-y-2 text-sm">
+            <table className="w-full table-fixed text-blue-900 border-separate border-spacing-y-2 text-sm">
               <thead>
                 <tr className="bg-zinc-200">
-                  <th className="p-2 rounded-l">Codice</th>
-                  <th className="p-2">Tipo</th>
-                  <th className="p-2 rounded-r">Azioni</th>
+                  <th className="p-2 text-center rounded-l min-w-[120px]">Codice</th>
+                  <th className="p-2 text-center min-w-[120px]">Tipo</th>
+                  <th className="p-2 text-center rounded-r min-w-[120px]">Azioni</th>
                 </tr>
               </thead>
               <tbody>
                 {aircrafts.map(a => (
                   <tr key={a.id} className="bg-white border-b border-zinc-200">
-                    <td className="p-2">{a.code}</td>
-                    <td className="p-2">{a.type}</td>
-                    <td className="p-2">
-                      <button onClick={() => handleDelete(a.id)} className="text-red-500 hover:underline">Elimina</button>
+                    <td className="p-2 text-center">{a.code}</td>
+                    <td className="p-2 text-center">{a.type}</td>
+                    <td className="p-2 text-center">
+                      <div className="flex justify-center gap-2">
+                        <button onClick={() => handleDelete(a.id)} className="text-red-500 hover:underline">Elimina</button>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -104,12 +104,12 @@ export default function TankersPage() {
           <div className="text-zinc-500">Caricamento...</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-blue-900 border-separate border-spacing-y-2 text-sm">
+            <table className="w-full table-fixed text-blue-900 border-separate border-spacing-y-2 text-sm">
               <thead>
                 <tr className="bg-zinc-200">
-                  <th className="p-2 rounded-l">Nome</th>
-                  <th className="p-2">Capacità</th>
-                  <th className="p-2 rounded-r">Azioni</th>
+                  <th className="p-2 text-center rounded-l min-w-[120px]">Nome</th>
+                  <th className="p-2 text-center min-w-[120px]">Capacità</th>
+                  <th className="p-2 text-center rounded-r min-w-[120px]">Azioni</th>
                 </tr>
               </thead>
               <tbody>
@@ -117,24 +117,28 @@ export default function TankersPage() {
                   <tr key={t.id} className="bg-white border-b border-zinc-200">
                     {editId === t.id ? (
                       <>
-                        <td className="p-2">
+                        <td className="p-2 text-center">
                           <input value={editName} onChange={e => setEditName(e.target.value)} className="p-1 rounded border border-zinc-300 w-full" />
                         </td>
-                        <td className="p-2">
+                        <td className="p-2 text-center">
                           <input type="number" value={editCapacity} onChange={e => setEditCapacity(e.target.value)} className="p-1 rounded border border-zinc-300 w-full" />
                         </td>
-                        <td className="p-2 flex gap-2">
-                          <button onClick={handleEditSave} className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">Salva</button>
-                          <button onClick={cancelEdit} className="bg-zinc-200 text-blue-700 px-2 py-1 rounded hover:bg-zinc-300">Annulla</button>
+                        <td className="p-2 text-center">
+                          <div className="flex justify-center gap-2">
+                            <button onClick={handleEditSave} className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">Salva</button>
+                            <button onClick={cancelEdit} className="bg-zinc-200 text-blue-700 px-2 py-1 rounded hover:bg-zinc-300">Annulla</button>
+                          </div>
                         </td>
                       </>
                     ) : (
                       <>
-                        <td className="p-2">{t.name}</td>
-                        <td className="p-2">{t.capacity}</td>
-                        <td className="p-2 flex gap-2">
-                          <button onClick={() => startEdit(t)} className="text-blue-600 hover:underline">Modifica</button>
-                          <button onClick={() => handleDelete(t.id)} className="text-red-500 hover:underline">Elimina</button>
+                        <td className="p-2 text-center">{t.name}</td>
+                        <td className="p-2 text-center">{t.capacity}</td>
+                        <td className="p-2 text-center">
+                          <div className="flex justify-center gap-2">
+                            <button onClick={() => startEdit(t)} className="text-blue-600 hover:underline">Modifica</button>
+                            <button onClick={() => handleDelete(t.id)} className="text-red-500 hover:underline">Elimina</button>
+                          </div>
                         </td>
                       </>
                     )}

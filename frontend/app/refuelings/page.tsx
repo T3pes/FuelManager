@@ -104,27 +104,29 @@ export default function RefuelingsPage() {
           <div className="text-zinc-500">Caricamento...</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-blue-900 border-separate border-spacing-y-2 text-sm">
+            <table className="w-full table-fixed text-blue-900 border-separate border-spacing-y-2 text-sm">
               <thead>
                 <tr className="bg-zinc-200">
-                  <th className="p-2 rounded-l">Operatore</th>
-                  <th className="p-2">Cisterna</th>
-                  <th className="p-2">Velivolo</th>
-                  <th className="p-2">Quantità</th>
-                  <th className="p-2">Data</th>
-                  <th className="p-2 rounded-r">Azioni</th>
+                  <th className="p-2 text-center rounded-l min-w-[120px]">Operatore</th>
+                  <th className="p-2 text-center min-w-[120px]">Cisterna</th>
+                  <th className="p-2 text-center min-w-[120px]">Velivolo</th>
+                  <th className="p-2 text-center min-w-[120px]">Quantità</th>
+                  <th className="p-2 text-center min-w-[120px]">Data</th>
+                  <th className="p-2 text-center rounded-r min-w-[120px]">Azioni</th>
                 </tr>
               </thead>
               <tbody>
                 {refuelings.map(r => (
                   <tr key={r.id} className="bg-white border-b border-zinc-200">
-                    <td className="p-2">{operators.find(o => o.id === r.operator_id)?.name || '-'}</td>
-                    <td className="p-2">{tankers.find(t => t.id === r.tanker_id)?.name || '-'}</td>
-                    <td className="p-2">{aircrafts.find(a => a.id === r.aircraft_id)?.code || '-'}</td>
-                    <td className="p-2">{r.quantity}</td>
-                    <td className="p-2">{r.date ? new Date(r.date).toLocaleString() : '-'}</td>
-                    <td className="p-2">
-                      <button onClick={() => handleDelete(r.id)} className="text-red-500 hover:underline">Elimina</button>
+                    <td className="p-2 text-center">{operators.find(o => o.id === r.operator_id)?.name || '-'}</td>
+                    <td className="p-2 text-center">{tankers.find(t => t.id === r.tanker_id)?.name || '-'}</td>
+                    <td className="p-2 text-center">{aircrafts.find(a => a.id === r.aircraft_id)?.code || '-'}</td>
+                    <td className="p-2 text-center">{r.quantity}</td>
+                    <td className="p-2 text-center">{r.date ? new Date(r.date).toLocaleString() : '-'}</td>
+                    <td className="p-2 text-center">
+                      <div className="flex justify-center gap-2">
+                        <button onClick={() => handleDelete(r.id)} className="text-red-500 hover:underline">Elimina</button>
+                      </div>
                     </td>
                   </tr>
                 ))}

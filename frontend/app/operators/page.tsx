@@ -92,23 +92,25 @@ export default function OperatorsPage() {
           <div className="text-zinc-500">Caricamento...</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-blue-900 border-separate border-spacing-y-2 text-sm">
+            <table className="w-full table-fixed text-blue-900 border-separate border-spacing-y-2 text-sm">
               <thead>
                 <tr className="bg-zinc-200">
-                  <th className="p-2 rounded-l">Nome</th>
-                  <th className="p-2">Email</th>
-                  <th className="p-2">Ruolo</th>
-                  <th className="p-2 rounded-r">Azioni</th>
+                  <th className="p-2 text-center rounded-l min-w-[120px]">Nome</th>
+                  <th className="p-2 text-center min-w-[120px]">Email</th>
+                  <th className="p-2 text-center min-w-[120px]">Ruolo</th>
+                  <th className="p-2 text-center rounded-r min-w-[120px]">Azioni</th>
                 </tr>
               </thead>
               <tbody>
                 {operators.map(o => (
                   <tr key={o.id} className="bg-white border-b border-zinc-200">
-                    <td className="p-2">{o.name}</td>
-                    <td className="p-2">{o.email}</td>
-                    <td className="p-2">{o.role}</td>
-                    <td className="p-2">
-                      <button onClick={() => handleDelete(o.id)} className="text-red-500 hover:underline">Elimina</button>
+                    <td className="p-2 text-center">{o.name}</td>
+                    <td className="p-2 text-center">{o.email}</td>
+                    <td className="p-2 text-center">{o.role}</td>
+                    <td className="p-2 text-center">
+                      <div className="flex justify-center gap-2">
+                        <button onClick={() => handleDelete(o.id)} className="text-red-500 hover:underline">Elimina</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
