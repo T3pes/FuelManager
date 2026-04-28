@@ -12,6 +12,9 @@ export default function TankersPage() {
   const [name, setName] = useState('');
   const [capacity, setCapacity] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editCapacity, setEditCapacity] = useState('');
 
   useEffect(() => {
     const getUser = async () => {
@@ -45,6 +48,27 @@ export default function TankersPage() {
     if (!confirm('Eliminare questa cisterna?')) return;
     const { error } = await supabase.from('tankers').delete().eq('id', id);
     if (error) setError(error.message);
+    fetchTankers();
+  }
+
+  function startEdit(t: any) {
+    setEditId(t.id);
+    setEditName(t.name);
+    setEditCapacity(t.capacity.toString());
+  }
+
+  function cancelEdit() {
+    setEditId(null);
+    setEditName('');
+    setEditCapacity('');
+  }
+
+  async function handleEditSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editName || !editCapacity) return setError('Compila tutti i campi');
+    const { error } = await supabase.from('tankers').update({ name: editName, capacity: Number(editCapacity) }).eq('id', editId);
+    if (error) setError(error.message);
+    cancelEdit();
     fetchTankers();
   }
 
@@ -91,11 +115,29 @@ export default function TankersPage() {
               <tbody>
                 {tankers.map(t => (
                   <tr key={t.id} className="bg-white border-b border-zinc-200">
-                    <td className="p-2">{t.name}</td>
-                    <td className="p-2">{t.capacity}</td>
-                    <td className="p-2">
-                      <button onClick={() => handleDelete(t.id)} className="text-red-500 hover:underline">Elimina</button>
-                    </td>
+                    {editId === t.id ? (
+                      <>
+                        <td className="p-2">
+                          <input value={editName} onChange={e => setEditName(e.target.value)} className="p-1 rounded border border-zinc-300 w-full" />
+                        </td>
+                        <td className="p-2">
+                          <input type="number" value={editCapacity} onChange={e => setEditCapacity(e.target.value)} className="p-1 rounded border border-zinc-300 w-full" />
+                        </td>
+                        <td className="p-2 flex gap-2">
+                          <button onClick={handleEditSave} className="bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">Salva</button>
+                          <button onClick={cancelEdit} className="bg-zinc-200 text-blue-700 px-2 py-1 rounded hover:bg-zinc-300">Annulla</button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="p-2">{t.name}</td>
+                        <td className="p-2">{t.capacity}</td>
+                        <td className="p-2 flex gap-2">
+                          <button onClick={() => startEdit(t)} className="text-blue-600 hover:underline">Modifica</button>
+                          <button onClick={() => handleDelete(t.id)} className="text-red-500 hover:underline">Elimina</button>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
