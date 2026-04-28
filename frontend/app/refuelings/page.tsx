@@ -47,7 +47,15 @@ export default function RefuelingsPage() {
     e.preventDefault();
     setError(null);
     if (!operatorId || !tankerId || !aircraftId || !quantity || !date) return setError('Compila tutti i campi');
-    const { error } = await supabase.from('refuelings').insert([{ operator_id: operatorId, tanker_id: tankerId, aircraft_id: aircraftId, quantity: Number(quantity), date }]);
+    // Conversione data locale in UTC ISO string
+    let dateUTC = date;
+    try {
+      const local = new Date(date);
+      dateUTC = new Date(local.getTime() - local.getTimezoneOffset() * 60000).toISOString();
+    } catch (err) {
+      // fallback: salvo comunque la stringa
+    }
+    const { error } = await supabase.from('refuelings').insert([{ operator_id: operatorId, tanker_id: tankerId, aircraft_id: aircraftId, quantity: Number(quantity), date: dateUTC }]);
     if (error) setError(error.message);
     setOperatorId(''); setTankerId(''); setAircraftId(''); setQuantity(''); setDate('');
     fetchAll();
@@ -55,8 +63,21 @@ export default function RefuelingsPage() {
 
   async function handleDelete(id: string) {
     if (!confirm('Eliminare questo rifornimento?')) return;
+    setError(null);
+    if (!id) {
+      setError('ID rifornimento non valido');
+      return;
+    }
     const { error } = await supabase.from('refuelings').delete().eq('id', id);
-    if (error) setError(error.message);
+    if (error) {
+      setError('Errore eliminazione: ' + error.message);
+    } else {
+      // controllo se la riga è effettivamente sparita
+      const { data } = await supabase.from('refuelings').select('id').eq('id', id);
+      if (data && data.length > 0) {
+        setError('Attenzione: il record non è stato eliminato.');
+      }
+    }
     fetchAll();
   }
 
