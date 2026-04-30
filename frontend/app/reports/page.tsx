@@ -134,8 +134,7 @@ export default function ReportsPage() {
           <button
             onClick={() => exportToCSV(refuelings, 'rifornimenti.csv')}
             className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${refuelings.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={refuelings.length === 0}
-          >
+            disabled={refuelings.length === 0}>
             Scarica CSV
           </button>
           <form onSubmit={handleSendEmail} className="flex gap-2">
@@ -187,15 +186,3 @@ export default function ReportsPage() {
   );
 }
 
-function exportToCSV(rows: any[], filename: string) {
-  if (!rows.length) return;
-  const header = Object.keys(rows[0]);
-  const csv = [header.join(','), ...rows.map(row => header.map(h => '"' + (row[h] ?? '') + '"').join(','))].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  window.URL.revokeObjectURL(url);
-}
