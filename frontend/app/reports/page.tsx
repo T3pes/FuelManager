@@ -42,8 +42,9 @@ export default function ReportsPage() {
   // Esporta i dati in CSV
   function exportToCSV(rows: any[], filename: string) {
     const header = ['ID','Operatore','Cisterna','Velivolo','Quantità','Data','Creato il'];
+    const sep = ';';
     const csv = [
-      header.join(','),
+      header.join(sep),
       ...(rows.length > 0 ? rows.map(row => [
         row.id,
         row.operator_id,
@@ -52,9 +53,9 @@ export default function ReportsPage() {
         row.quantity,
         row.date ? new Date(row.date).toLocaleString() : '-',
         row.created_at ? new Date(row.created_at).toLocaleString() : '-'
-      ].map(v => '"' + (v ?? '') + '"').join(',')) : [])
+      ].map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(sep)) : [])
     ].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -70,8 +71,9 @@ export default function ReportsPage() {
     setSending(true);
     try {
       const header = ['ID','Operatore','Cisterna','Velivolo','Quantità','Data','Creato il'];
+      const sep = ';';
       const csv = [
-        header.join(','),
+        header.join(sep),
         ...refuelings.map(row => [
           row.id,
           row.operator_id,
@@ -80,7 +82,7 @@ export default function ReportsPage() {
           row.quantity,
           row.date ? new Date(row.date).toLocaleString() : '-',
           row.created_at ? new Date(row.created_at).toLocaleString() : '-'
-        ].map(v => '"' + (v ?? '') + '"').join(','))
+        ].map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(sep))
       ].join('\n');
       const subject = 'Report rifornimenti FuelManager';
       const text = `Totale rifornimenti: ${refuelings.length}\nTotale litri erogati: ${totalLiters}`;

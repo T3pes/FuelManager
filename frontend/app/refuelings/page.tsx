@@ -25,17 +25,18 @@ export default function RefuelingsPage() {
   function exportToCSV(rows: any[], filename: string) {
     if (!rows.length) return;
     const header = ['Operatore','Cisterna','Velivolo','Quantità','Data'];
+    const sep = ';';
     const csv = [
-      header.join(','),
+      header.join(sep),
       ...rows.map(row => [
         operators.find(o => o.id === row.operator_id)?.name || '-',
         tankers.find(t => t.id === row.tanker_id)?.name || '-',
         aircrafts.find(a => a.id === row.aircraft_id)?.code || '-',
         row.quantity,
         row.date ? new Date(row.date).toLocaleString() : '-'
-      ].map(v => '"' + (v ?? '') + '"').join(','))
+      ].map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(sep))
     ].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -50,17 +51,17 @@ export default function RefuelingsPage() {
     setSendMsg(null);
     setSending(true);
     try {
-      // Genera CSV come stringa
       const header = ['Operatore','Cisterna','Velivolo','Quantità','Data'];
+      const sep = ';';
       const csv = [
-        header.join(','),
+        header.join(sep),
         ...refuelings.map(row => [
           operators.find(o => o.id === row.operator_id)?.name || '-',
           tankers.find(t => t.id === row.tanker_id)?.name || '-',
           aircrafts.find(a => a.id === row.aircraft_id)?.code || '-',
           row.quantity,
           row.date ? new Date(row.date).toLocaleString() : '-'
-        ].map(v => '"' + (v ?? '') + '"').join(','))
+        ].map(v => '"' + String(v ?? '').replace(/"/g, '""') + '"').join(sep))
       ].join('\n');
       const subject = 'Report rifornimenti FuelManager';
       const text = 'In allegato il report dei rifornimenti.';
