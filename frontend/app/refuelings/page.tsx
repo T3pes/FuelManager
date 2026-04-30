@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { saveAs } from 'file-saver';
 import { supabase } from '@/lib/supabaseClient';
 import { Navbar } from '@/components/Navbar';
 import Link from 'next/link';
@@ -18,6 +19,76 @@ export default function RefuelingsPage() {
   const [operators, setOperators] = useState<any[]>([]);
   const [tankers, setTankers] = useState<any[]>([]);
   const [aircrafts, setAircrafts] = useState<any[]>([]);
+  const [email, setEmail] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendMsg, setSendMsg] = useState<string | null>(null);
+  // Funzione per esportare i dati in CSV
+  function exportToCSV(rows: any[], filename: string) {
+    if (!rows.length) return;
+    const header = ['Operatore','Cisterna','Velivolo','Quantità','Data'];
+    const csv = [
+      header.join(','),
+      ...rows.map(row => [
+        operators.find(o => o.id === row.operator_id)?.name || '-',
+        tankers.find(t => t.id === row.tanker_id)?.name || '-',
+        aircrafts.find(a => a.id === row.aircraft_id)?.code || '-',
+        row.quantity,
+        row.date ? new Date(row.date).toLocaleString() : '-'
+      ].map(v => '"' + (v ?? '') + '"').join(','))
+    ].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+      window.navigator.msSaveOrOpenBlob(blob, filename);
+    } else {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }
+  }
+
+  // Funzione per inviare il CSV via email
+  async function handleSendEmail(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    setSendMsg(null);
+    setSending(true);
+    try {
+      // Genera CSV come stringa
+      const header = ['Operatore','Cisterna','Velivolo','Quantità','Data'];
+      const csv = [
+        header.join(','),
+        ...refuelings.map(row => [
+          operators.find(o => o.id === row.operator_id)?.name || '-',
+          tankers.find(t => t.id === row.tanker_id)?.name || '-',
+          aircrafts.find(a => a.id === row.aircraft_id)?.code || '-',
+          row.quantity,
+          row.date ? new Date(row.date).toLocaleString() : '-'
+        ].map(v => '"' + (v ?? '') + '"').join(','))
+      ].join('\n');
+      const subject = 'Report rifornimenti FuelManager';
+      const text = 'In allegato il report dei rifornimenti.';
+      const html = '<h2>Report rifornimenti FuelManager</h2><p>In allegato il file CSV dei rifornimenti.</p>';
+      const res = await fetch('/api/send-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email.split(',').map(e => e.trim()),
+          subject,
+          text,
+          html,
+          csvContent: csv,
+          csvFilename: 'rifornimenti.csv'
+        })
+      });
+      if (res.ok) setSendMsg('Email inviata con successo!');
+      else setSendMsg('Errore invio email: ' + (await res.json()).error);
+    } catch (err: any) {
+      setSendMsg('Errore invio email: ' + err.message);
+    }
+    setSending(false);
+  }
 
   useEffect(() => {
     const getUser = async () => {
@@ -98,6 +169,29 @@ export default function RefuelingsPage() {
           <Link href="/" className="text-blue-700 hover:underline">&larr; Torna alla Dashboard</Link>
         </div>
         <h1 className="text-2xl font-bold mb-6 text-blue-700">Gestione Rifornimenti</h1>
+        {/* Pulsanti export e invio email */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            onClick={() => exportToCSV(refuelings, 'rifornimenti.csv')}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Scarica CSV
+          </button>
+          <form onSubmit={handleSendEmail} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Email destinatari (separate da virgola)"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="p-2 rounded bg-zinc-100 text-black border border-zinc-300"
+              required
+            />
+            <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700" disabled={sending}>
+              {sending ? 'Invio...' : 'Invia report via email'}
+            </button>
+          </form>
+        </div>
+        {sendMsg && <div className={sendMsg.startsWith('Errore') ? 'text-red-500' : 'text-green-600'}>{sendMsg}</div>}
         <form onSubmit={handleAdd} className="flex flex-wrap gap-2 mb-6">
           <select value={operatorId} onChange={e => setOperatorId(e.target.value)} className="p-2 rounded bg-zinc-100 text-black border border-zinc-300">
             <option value="">Operatore</option>
