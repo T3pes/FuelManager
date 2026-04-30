@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { saveAs } from 'file-saver';
 import { supabase } from '@/lib/supabaseClient';
 import { Navbar } from '@/components/Navbar';
 import Link from 'next/link';
@@ -37,16 +36,12 @@ export default function RefuelingsPage() {
       ].map(v => '"' + (v ?? '') + '"').join(','))
     ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
-    if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-      window.navigator.msSaveOrOpenBlob(blob, filename);
-    } else {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    }
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
   }
 
   // Funzione per inviare il CSV via email
