@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Navbar } from '@/components/Navbar';
 import Link from 'next/link';
 
 export default function RefuelingsPage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [refuelings, setRefuelings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [operatorId, setOperatorId] = useState('');
@@ -89,7 +92,12 @@ export default function RefuelingsPage() {
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
-      setUser(data?.user || null);
+      if (!data?.user) {
+        router.push('/login');
+      } else {
+        setUser(data.user);
+      }
+      setAuthLoading(false);
     };
     getUser();
     fetchAll();
@@ -155,6 +163,7 @@ export default function RefuelingsPage() {
     fetchAll();
   }
 
+  if (authLoading) return <div className="flex min-h-screen items-center justify-center text-zinc-500">Caricamento...</div>;
   if (!user) return null;
 
   return (

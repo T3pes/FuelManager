@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Navbar } from '@/components/Navbar';
 import Link from 'next/link';
@@ -9,7 +10,9 @@ type Tanker = { id: string; name: string; capacity: number };
 type Refueling = { id: string; tanker_id: string; quantity: number };
 
 export default function TankersPage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [tankers, setTankers] = useState<Tanker[]>([]);
   const [refuelings, setRefuelings] = useState<Refueling[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +29,12 @@ export default function TankersPage() {
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
-      setUser(data?.user || null);
+      if (!data?.user) {
+        router.push('/login');
+      } else {
+        setUser(data.user);
+      }
+      setAuthLoading(false);
     };
     getUser();
     fetchAll();
@@ -104,6 +112,7 @@ export default function TankersPage() {
     fetchAll();
   }
 
+  if (authLoading) return <div className="flex min-h-screen items-center justify-center text-zinc-500">Caricamento...</div>;
   if (!user) return null;
 
   return (

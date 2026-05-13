@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Navbar } from '@/components/Navbar';
 import Link from 'next/link';
 
 export default function OperatorsPage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [operators, setOperators] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -17,7 +20,12 @@ export default function OperatorsPage() {
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
-      setUser(data?.user || null);
+      if (!data?.user) {
+        router.push('/login');
+      } else {
+        setUser(data.user);
+      }
+      setAuthLoading(false);
     };
     getUser();
     fetchOperators();
@@ -50,6 +58,7 @@ export default function OperatorsPage() {
     fetchOperators();
   }
 
+  if (authLoading) return <div className="flex min-h-screen items-center justify-center text-zinc-500">Caricamento...</div>;
   if (!user) return null;
 
   return (

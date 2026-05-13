@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Navbar } from '@/components/Navbar';
 import Link from 'next/link';
 
 export default function AircraftsPage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [aircrafts, setAircrafts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [code, setCode] = useState('');
@@ -16,7 +19,12 @@ export default function AircraftsPage() {
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
-      setUser(data?.user || null);
+      if (!data?.user) {
+        router.push('/login');
+      } else {
+        setUser(data.user);
+      }
+      setAuthLoading(false);
     };
     getUser();
     fetchAircrafts();
@@ -48,6 +56,7 @@ export default function AircraftsPage() {
     fetchAircrafts();
   }
 
+  if (authLoading) return <div className="flex min-h-screen items-center justify-center text-zinc-500">Caricamento...</div>;
   if (!user) return null;
 
   return (

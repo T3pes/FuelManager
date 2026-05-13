@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { Navbar } from '@/components/Navbar';
 import {
@@ -22,37 +23,41 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
 
 export default function Home() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [refuelings, setRefuelings] = useState<any[]>([]);
   const [tankers, setTankers] = useState<any[]>([]);
   const [operators, setOperators] = useState<any[]>([]);
-  const [aircrafts, setAircrafts] = useState<any[]>([]);
 
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
-      setUser(data?.user || null);
+      if (!data?.user) {
+        router.push('/login');
+      } else {
+        setUser(data.user);
+      }
+      setAuthLoading(false);
     };
     getUser();
     fetchAll();
   }, []);
 
   async function fetchAll() {
-    const [r, t, o, a] = await Promise.all([
+    const [r, t, o] = await Promise.all([
       supabase.from('refuelings').select('*'),
       supabase.from('tankers').select('id, name, capacity'),
       supabase.from('operators').select('id, name'),
-      supabase.from('aircrafts').select('id, code')
     ]);
     setRefuelings(r.data || []);
     setTankers(t.data || []);
     setOperators(o.data || []);
-    setAircrafts(a.data || []);
     setLoading(false);
   }
 
-  if (loading || !user) return <div className="flex min-h-screen items-center justify-center text-zinc-500">Caricamento...</div>;
+  if (authLoading || loading || !user) return <div className="flex min-h-screen items-center justify-center text-zinc-500">Caricamento...</div>;
 
   // Preparo dati per i grafici
   // 1. Litri riforniti per giorno
